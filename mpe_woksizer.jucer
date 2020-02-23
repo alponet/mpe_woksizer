@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="WHbls4" name="mpe_woksizer" projectType="audioplug" jucerVersion="5.4.6">
+<JUCERPROJECT id="WHbls4" name="mpe_woksizer" projectType="audioplug" jucerVersion="5.4.7"
+              companyName="Thomas Alpers" companyWebsite="alpers.it" bundleIdentifier="it.alpers.mpe-woksizer">
   <MAINGROUP id="Yr5Jvt" name="mpe_woksizer">
     <GROUP id="{DD36E7B8-2D73-DACB-7C3A-19E7C509CB99}" name="Source">
       <FILE id="o5lCiR" name="PluginProcessor.cpp" compile="1" resource="0"

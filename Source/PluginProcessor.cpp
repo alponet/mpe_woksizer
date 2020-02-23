@@ -1,17 +1,7 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-//==============================================================================
+
 Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -26,15 +16,17 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()
 {
 }
 
+
 Mpe_woksizerAudioProcessor::~Mpe_woksizerAudioProcessor()
 {
 }
 
-//==============================================================================
+
 const String Mpe_woksizerAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
+
 
 bool Mpe_woksizerAudioProcessor::acceptsMidi() const
 {
@@ -45,6 +37,7 @@ bool Mpe_woksizerAudioProcessor::acceptsMidi() const
    #endif
 }
 
+
 bool Mpe_woksizerAudioProcessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
@@ -53,6 +46,7 @@ bool Mpe_woksizerAudioProcessor::producesMidi() const
     return false;
    #endif
 }
+
 
 bool Mpe_woksizerAudioProcessor::isMidiEffect() const
 {
@@ -63,10 +57,12 @@ bool Mpe_woksizerAudioProcessor::isMidiEffect() const
    #endif
 }
 
+
 double Mpe_woksizerAudioProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
+
 
 int Mpe_woksizerAudioProcessor::getNumPrograms()
 {
@@ -74,36 +70,42 @@ int Mpe_woksizerAudioProcessor::getNumPrograms()
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
+
 int Mpe_woksizerAudioProcessor::getCurrentProgram()
 {
     return 0;
 }
 
+
 void Mpe_woksizerAudioProcessor::setCurrentProgram (int index)
 {
 }
+
 
 const String Mpe_woksizerAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
+
 void Mpe_woksizerAudioProcessor::changeProgramName (int index, const String& newName)
 {
 }
 
-//==============================================================================
+
 void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 }
 
+
 void Mpe_woksizerAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
+
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool Mpe_woksizerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -129,6 +131,7 @@ bool Mpe_woksizerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 }
 #endif
 
+
 void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
@@ -144,32 +147,31 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        const float* inputData = buffer.getReadPointer(channel);
+        float* outputData = buffer.getWritePointer (channel);
 
-        // ..do something to the data...
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            outputData[sample] = inputData[sample] * volume;
+        }
     }
 }
 
-//==============================================================================
+
 bool Mpe_woksizerAudioProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+    return true;
 }
+
 
 AudioProcessorEditor* Mpe_woksizerAudioProcessor::createEditor()
 {
     return new Mpe_woksizerAudioProcessorEditor (*this);
 }
 
-//==============================================================================
+
 void Mpe_woksizerAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
@@ -177,13 +179,14 @@ void Mpe_woksizerAudioProcessor::getStateInformation (MemoryBlock& destData)
     // as intermediaries to make it easy to save and load complex data.
 }
 
+
 void Mpe_woksizerAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
 
-//==============================================================================
+
 // This creates new instances of the plugin..
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
