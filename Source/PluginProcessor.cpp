@@ -3,17 +3,22 @@
 
 
 Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()
+    : parameters (*this, nullptr, Identifier ("WoksizerParams"),
+    {
+        std::make_unique<AudioParameterFloat> ("volume", "Volume", 0.0, 2.0, 1.0)
+    }),
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    AudioProcessor (BusesProperties()
+         #if ! JucePlugin_IsMidiEffect
+          #if ! JucePlugin_IsSynth
+           .withInput  ("Input",  AudioChannelSet::stereo(), true)
+          #endif
+           .withOutput ("Output", AudioChannelSet::stereo(), true)
+         #endif
+           )
 #endif
 {
+    volumeParameter = parameters.getRawParameterValue("volume");
 }
 
 
@@ -137,6 +142,7 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
+    auto currentVolume = *volumeParameter;
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -154,7 +160,7 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            outputData[sample] = inputData[sample] * volume;
+            outputData[sample] = inputData[sample] * currentVolume;
         }
     }
 }
@@ -168,22 +174,24 @@ bool Mpe_woksizerAudioProcessor::hasEditor() const
 
 AudioProcessorEditor* Mpe_woksizerAudioProcessor::createEditor()
 {
-    return new Mpe_woksizerAudioProcessorEditor (*this);
+    return new Mpe_woksizerAudioProcessorEditor (*this, parameters);
 }
 
 
 void Mpe_woksizerAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    auto state = parameters.copyState();
+    std::unique_ptr<XmlElement> xml (state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 
 void Mpe_woksizerAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<XmlElement> xmlState (getXmlFromBinary(data, sizeInBytes));
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName(parameters.state.getType()))
+            parameters.replaceState(ValueTree::fromXml(*xmlState));
 }
 
 

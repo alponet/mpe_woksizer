@@ -15,23 +15,23 @@
 
 /**
 */
-class Mpe_woksizerAudioProcessorEditor  : public AudioProcessorEditor, private Slider::Listener
+class Mpe_woksizerAudioProcessorEditor  : public AudioProcessorEditor
 {
 public:
-    Mpe_woksizerAudioProcessorEditor (Mpe_woksizerAudioProcessor&);
+    typedef AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
+    
+    Mpe_woksizerAudioProcessorEditor (Mpe_woksizerAudioProcessor&, AudioProcessorValueTreeState&);
     ~Mpe_woksizerAudioProcessorEditor();
 
     void paint (Graphics&) override;
     void resized() override;
 
 private:
-    void sliderValueChanged (Slider* slider) override;
-    
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     Mpe_woksizerAudioProcessor& processor;
+    AudioProcessorValueTreeState& valueTreeState;
     
     Slider volumeSlider;
-
+    std::unique_ptr<SliderAttachment> volumeAttachment;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Mpe_woksizerAudioProcessorEditor)
 };

@@ -7,9 +7,7 @@
 */
 class Mpe_woksizerAudioProcessor  : public AudioProcessor
 {
-public:
-    float volume = 1.0;
-    
+public:    
     Mpe_woksizerAudioProcessor();
     ~Mpe_woksizerAudioProcessor();
 
@@ -42,5 +40,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
+    AudioProcessorValueTreeState parameters;
+    float* volumeParameter = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Mpe_woksizerAudioProcessor)
 };
