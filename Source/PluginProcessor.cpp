@@ -2,11 +2,7 @@
 #include "PluginEditor.h"
 
 
-Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()
-    : parameters (*this, nullptr, Identifier ("WoksizerParams"),
-    {
-        std::make_unique<AudioParameterFloat> ("volume", "Volume", 0.0, 2.0, 1.0)
-    }),
+Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
 #ifndef JucePlugin_PreferredChannelConfigurations
     AudioProcessor (BusesProperties()
          #if ! JucePlugin_IsMidiEffect
@@ -15,10 +11,23 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()
           #endif
            .withOutput ("Output", AudioChannelSet::stereo(), true)
          #endif
-           )
+           ),
 #endif
+    parameters (*this, nullptr, Identifier ("WoksizerParams"),
+    {
+        std::make_unique<AudioParameterFloat> ("volume", "Volume", 0.0, 2.0, 1.0)
+    })
 {
     volumeParameter = parameters.getRawParameterValue("volume");
+    
+    mySynth.clearVoices();
+    for (int i = 0; i < 5; i++) {
+        mySynth.addVoice (new SynthVoice());
+    }
+    
+    mySynth.clearSounds();
+    mySynth.addSound(new SynthSound());
+    
 }
 
 
@@ -100,8 +109,9 @@ void Mpe_woksizerAudioProcessor::changeProgramName (int index, const String& new
 
 void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    ignoreUnused(samplesPerBlock);
+    lastSampleRate = sampleRate;
+    mySynth.setCurrentPlaybackSampleRate(lastSampleRate);
 }
 
 
@@ -144,25 +154,10 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     auto currentVolume = *volumeParameter;
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        const float* inputData = buffer.getReadPointer(channel);
-        float* outputData = buffer.getWritePointer (channel);
-
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-        {
-            outputData[sample] = inputData[sample] * currentVolume;
-        }
-    }
+    
+    mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 }
 
 

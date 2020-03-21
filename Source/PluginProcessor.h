@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SynthSound.h"
+#include "SynthVoice.h"
 
 
 /**
@@ -42,5 +44,10 @@ public:
 private:
     AudioProcessorValueTreeState parameters;
     float* volumeParameter = nullptr;
+    
+    Synthesiser mySynth;
+    
+    double lastSampleRate;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Mpe_woksizerAudioProcessor)
 };
