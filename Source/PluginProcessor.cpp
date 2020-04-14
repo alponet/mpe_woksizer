@@ -158,6 +158,13 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
         buffer.clear (i, 0, buffer.getNumSamples());
     
     mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+    
+    for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
+        auto* channelData = buffer.getWritePointer(channel);
+        for (auto sample = 0; sample < buffer.getNumSamples(); ++sample)
+            channelData[sample] *= currentVolume;
+    }
+    
 }
 
 
