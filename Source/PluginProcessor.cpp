@@ -15,11 +15,13 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
 #endif
     parameters (*this, nullptr, Identifier ("WoksizerParams"),
     {
-        std::make_unique<AudioParameterFloat> ("volume", "Volume", 0.0, 2.0, 1.0)
+        std::make_unique<AudioParameterFloat> ("volume", "Volume", NormalisableRange<float> (0.0, 2.0, 0.01, 0.5), 1.0),
+        std::make_unique<AudioParameterFloat> ("envAttack", "Attack", NormalisableRange<float> (0.0, 6000.0, 1.0, 0.5), 100.0),
+        std::make_unique<AudioParameterFloat> ("envDecay", "Decay", NormalisableRange<float> (0.0, 6000.0, 1.0, 0.5), 100.0),
+        std::make_unique<AudioParameterFloat> ("envSustain", "Sustain", NormalisableRange<float> (0.0, 1.0, 0.01, 0.5), 0.8),
+        std::make_unique<AudioParameterFloat> ("envRelease", "Release", NormalisableRange<float> (0.0, 6000.0, 1.0, 0.5), 500.0)
     })
 {
-    volumeParameter = parameters.getRawParameterValue("volume");
-    
     mySynth.clearVoices();
     for (int i = 0; i < 5; i++) {
         mySynth.addVoice (new SynthVoice());
@@ -27,7 +29,6 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
     
     mySynth.clearSounds();
     mySynth.addSound(new SynthSound());
-    
 }
 
 
@@ -152,17 +153,27 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-    auto currentVolume = *volumeParameter;
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+    
+    for (int i = 0; i < mySynth.getNumVoices(); i++)
+    {
+        if ((myVoice = dynamic_cast<SynthVoice*>(mySynth.getVoice(i)))) {
+            float a = *parameters.getRawParameterValue("envAttack");
+            float d = *parameters.getRawParameterValue("envDecay");
+            float s = *parameters.getRawParameterValue("envSustain");
+            float r = *parameters.getRawParameterValue("envRelease");
+            myVoice->setEnvelope(a, d, s, r);
+        }
+    }
     
     mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
     
     for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
         auto* channelData = buffer.getWritePointer(channel);
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample)
-            channelData[sample] *= currentVolume;
+            channelData[sample] *= *parameters.getRawParameterValue("volume");
     }
     
 }

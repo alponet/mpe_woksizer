@@ -10,13 +10,34 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
     setSize (200, 200);
     
     volumeSlider.setSliderStyle(Slider::LinearBarVertical);
-    volumeSlider.setSkewFactor(0.8);
     volumeSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
     volumeSlider.setPopupDisplayEnabled(true, false, this);
-    volumeSlider.setTextValueSuffix(" Volume");
-    
     addAndMakeVisible(&volumeSlider);
     volumeAttachment.reset (new SliderAttachment (valueTreeState, "volume", volumeSlider));
+    
+    envAttackSlider.setSliderStyle(Slider::LinearBarVertical);
+    envAttackSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    envAttackSlider.setPopupDisplayEnabled(true, false, this);
+    addAndMakeVisible(&envAttackSlider);
+    envAttackAttachment.reset (new SliderAttachment (valueTreeState, "envAttack", envAttackSlider));
+    
+    envDecaySlider.setSliderStyle(Slider::LinearBarVertical);
+    envDecaySlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    envDecaySlider.setPopupDisplayEnabled(true, false, this);
+    addAndMakeVisible(&envDecaySlider);
+    envDecayAttachment.reset (new SliderAttachment (valueTreeState, "envDecay", envDecaySlider));
+
+    envSustainSlider.setSliderStyle(Slider::LinearBarVertical);
+    envSustainSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    envSustainSlider.setPopupDisplayEnabled(true, false, this);
+    addAndMakeVisible(&envSustainSlider);
+    envReleaseAttachment.reset (new SliderAttachment (valueTreeState, "envSustain", envSustainSlider));
+
+    envReleaseSlider.setSliderStyle(Slider::LinearBarVertical);
+    envReleaseSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    envReleaseSlider.setPopupDisplayEnabled(true, false, this);
+    addAndMakeVisible(&envReleaseSlider);
+    envReleaseAttachment.reset (new SliderAttachment (valueTreeState, "envRelease", envReleaseSlider));
 }
 
 
@@ -30,14 +51,20 @@ void Mpe_woksizerAudioProcessorEditor::paint (Graphics& g)
     g.fillAll (Colours::white);
     g.setColour(Colours::black);
     g.setFont (15.0f);
-    g.drawFittedText ("Volume", 0, 0, getWidth(), 30, Justification::centred, 1);
+    g.drawSingleLineText("Vol", 20, 20);
+    g.drawSingleLineText("A", 76, 20);
+    g.drawSingleLineText("D", 106, 20);
+    g.drawSingleLineText("S", 136, 20);
+    g.drawSingleLineText("R", 166, 20);
 }
 
 
 void Mpe_woksizerAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    
-    volumeSlider.setBounds(40, 30, 20, getHeight() - 60);
+    int h = getHeight() - 60;
+    volumeSlider.setBounds(20, 30, 20, h);
+    envAttackSlider.setBounds(70, 30, 20, h);
+    envDecaySlider.setBounds(100, 30, 20, h);
+    envSustainSlider.setBounds(130, 30, 20, h);
+    envReleaseSlider.setBounds(160, 30, 20, h);
 }

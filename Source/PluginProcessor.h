@@ -43,9 +43,9 @@ public:
 
 private:
     AudioProcessorValueTreeState parameters;
-    float* volumeParameter = nullptr;
     
     Synthesiser mySynth;
+    SynthVoice* myVoice;
     
     double lastSampleRate;
     

@@ -24,11 +24,6 @@ void SynthVoice::stopNote (float velocity, bool allowTailOff)
 
 void SynthVoice::renderNextBlock (AudioBuffer<float>& outputBuffer, int startSample, int numSamples)
 {
-    env.setAttack(100);
-    env.setDecay(100);
-    env.setSustain(0.8);
-    env.setRelease(500);
-    
     for (int sample = 0; sample < numSamples; ++sample)
     {
         double theWave = osc.sinewave(frequency);
@@ -41,4 +36,13 @@ void SynthVoice::renderNextBlock (AudioBuffer<float>& outputBuffer, int startSam
         
         ++startSample;
     }
+}
+
+
+void SynthVoice::setEnvelope(float a, float d, float s, float r)
+{
+    env.setAttack(a);
+    env.setDecay(d);
+    env.setSustain(s);
+    env.setRelease(r);
 }

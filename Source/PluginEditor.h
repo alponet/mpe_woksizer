@@ -33,5 +33,17 @@ private:
     Slider volumeSlider;
     std::unique_ptr<SliderAttachment> volumeAttachment;
     
+    Slider envAttackSlider;
+    std::unique_ptr<SliderAttachment> envAttackAttachment;
+    
+    Slider envDecaySlider;
+    std::unique_ptr<SliderAttachment> envDecayAttachment;
+    
+    Slider envSustainSlider;
+    std::unique_ptr<SliderAttachment> envSustainAttachment;
+    
+    Slider envReleaseSlider;
+    std::unique_ptr<SliderAttachment> envReleaseAttachment;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Mpe_woksizerAudioProcessorEditor)
 };
