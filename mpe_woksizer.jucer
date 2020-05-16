@@ -3,7 +3,9 @@
 <JUCERPROJECT id="WHbls4" name="mpe_woksizer" projectType="audioplug" jucerVersion="5.4.7"
               companyName="Thomas Alpers" companyWebsite="alpers.it" bundleIdentifier="it.alpers.mpe-woksizer"
               pluginName="Woksizer" pluginDesc="MPE compatible vocal synthesizer"
-              splashScreenColour="Light" version="0.1.0" pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn">
+              splashScreenColour="Light" version="0.3.0" pluginCharacteristicsValue="pluginWantsMidiIn"
+              pluginVST3Category="Instrument,Synth" pluginFormats="buildAU,buildVST3"
+              pluginAUMainType="'aumu'">
   <MAINGROUP id="Yr5Jvt" name="mpe_woksizer">
     <GROUP id="{DD36E7B8-2D73-DACB-7C3A-19E7C509CB99}" name="Source">
       <FILE id="QR7Z6O" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>
@@ -47,6 +49,7 @@
         <MODULEPATH id="juce_gui_basics" path="JuceLibraryCode/modules"/>
         <MODULEPATH id="juce_gui_extra" path="JuceLibraryCode/modules"/>
         <MODULEPATH id="juce_opengl" path="JuceLibraryCode/modules"/>
+        <MODULEPATH id="juce_dsp" path="JuceLibraryCode/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
@@ -61,6 +64,7 @@
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
     <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>

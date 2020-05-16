@@ -111,8 +111,27 @@ void Mpe_woksizerAudioProcessor::changeProgramName (int index, const String& new
 void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     ignoreUnused(samplesPerBlock);
-    lastSampleRate = sampleRate;
-    mySynth.setCurrentPlaybackSampleRate(lastSampleRate);
+    mySynth.setCurrentPlaybackSampleRate(sampleRate);
+    audioAnalyseBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
+    audioOutBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
+    
+    dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = getTotalNumOutputChannels();
+    
+    for (int i = 0; i < modulatorFilterBank.size(); ++i) {
+        float frequency = filterFrequencies[round((filterFrequencies.size() / filterCount) * (i+1) - 1)];
+        filteredCarrierBuffer[i].setSize(getTotalNumInputChannels(), samplesPerBlock);
+        
+        modulatorFilterBank[i].reset();
+        *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, frequency, filterQ);
+        modulatorFilterBank[i].prepare(spec);
+        
+        carrierFilterBank[i].reset();
+        *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, frequency, filterQ);
+        carrierFilterBank[i].prepare(spec);
+    }
 }
 
 
@@ -151,10 +170,8 @@ bool Mpe_woksizerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
     for (int i = 0; i < mySynth.getNumVoices(); i++)
@@ -168,14 +185,39 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
         }
     }
     
-    mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+    audioAnalyseBuffer.clear();
     
-    for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
-        auto* channelData = buffer.getWritePointer(channel);
-        for (auto sample = 0; sample < buffer.getNumSamples(); ++sample)
-            channelData[sample] *= *parameters.getRawParameterValue("volume");
+    dsp::AudioBlock<float> audioInputBlock(buffer);
+    dsp::AudioBlock<float> audioAnalyseBlock(audioAnalyseBuffer);
+    
+    for (int i = 0; i < modulatorFilterBank.size(); ++i) {
+        modulatorFilterBank[i].process(dsp::ProcessContextNonReplacing<float>(audioInputBlock, audioAnalyseBlock));
+        envFollower[i] = audioAnalyseBuffer.getRMSLevel(0, 0, audioAnalyseBuffer.getNumSamples());
     }
     
+    audioOutBuffer.clear();
+    buffer.clear();
+    mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+    
+    for (int i = 0; i < carrierFilterBank.size(); ++i) {
+        filteredCarrierBuffer[i].clear();
+        dsp::AudioBlock<float> blockCopy(buffer);
+        dsp::AudioBlock<float> filterBlock(filteredCarrierBuffer[i]);
+        filterBlock.copyFrom(blockCopy);
+        carrierFilterBank[i].process(dsp::ProcessContextReplacing<float> (filterBlock));
+
+        for (int channel = 0; channel < getTotalNumOutputChannels(); ++channel) {
+            filteredCarrierBuffer[i].applyGainRamp(channel, 0, 10, lastGain[i], envFollower[i]);
+            filteredCarrierBuffer[i].applyGain(channel, 10, buffer.getNumSamples() - 10, envFollower[i]);
+
+            audioOutBuffer.addFrom(channel, 0, filteredCarrierBuffer[i], channel, 0, filteredCarrierBuffer[i].getNumSamples());
+        }
+
+        lastGain[i] = envFollower[i];
+    }
+    
+    buffer = audioOutBuffer;
+    buffer.applyGain(*parameters.getRawParameterValue("volume"));
 }
 
 

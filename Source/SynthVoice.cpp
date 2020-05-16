@@ -26,7 +26,7 @@ void SynthVoice::renderNextBlock (AudioBuffer<float>& outputBuffer, int startSam
 {
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        double theWave = osc.sinewave(frequency);
+        double theWave = osc.saw(frequency);
         double theSound = env.adsr(theWave, env.trigger) * level;
         
         for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
