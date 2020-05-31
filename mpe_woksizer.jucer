@@ -8,6 +8,9 @@
               pluginAUMainType="'aumu'">
   <MAINGROUP id="Yr5Jvt" name="mpe_woksizer">
     <GROUP id="{DD36E7B8-2D73-DACB-7C3A-19E7C509CB99}" name="Source">
+      <FILE id="aDhR0F" name="OnePole.h" compile="0" resource="0" file="Source/OnePole.h"/>
+      <FILE id="mVzQgj" name="NoiseVoice.cpp" compile="1" resource="0" file="Source/NoiseVoice.cpp"/>
+      <FILE id="CE8NkK" name="NoiseVoice.h" compile="0" resource="0" file="Source/NoiseVoice.h"/>
       <FILE id="QR7Z6O" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>
       <FILE id="ETrul8" name="SynthVoice.h" compile="0" resource="0" file="Source/SynthVoice.h"/>
       <FILE id="HIvPGM" name="SynthSound.h" compile="0" resource="0" file="Source/SynthSound.h"/>

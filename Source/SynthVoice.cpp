@@ -26,7 +26,8 @@ void SynthVoice::renderNextBlock (AudioBuffer<float>& outputBuffer, int startSam
 {
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        double theWave = osc.saw(frequency);
+        double detunedFrequency = frequency + this->detune * 1.0005777895;
+        double theWave = osc.saw(detunedFrequency);
         double theSound = env.adsr(theWave, env.trigger) * level;
         
         for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
@@ -45,4 +46,10 @@ void SynthVoice::setEnvelope(float a, float d, float s, float r)
     env.setDecay(d);
     env.setSustain(s);
     env.setRelease(r);
+}
+
+
+void SynthVoice::setDetune(float cents)
+{
+    detune = cents;
 }
