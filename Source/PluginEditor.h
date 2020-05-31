@@ -36,23 +36,11 @@ private:
     Slider envAttackSlider;
     std::unique_ptr<SliderAttachment> envAttackAttachment;
     
-    Slider envDecaySlider;
-    std::unique_ptr<SliderAttachment> envDecayAttachment;
-    
-    Slider envSustainSlider;
-    std::unique_ptr<SliderAttachment> envSustainAttachment;
-    
     Slider envReleaseSlider;
     std::unique_ptr<SliderAttachment> envReleaseAttachment;
     
     Slider filterQSlider;
     std::unique_ptr<SliderAttachment> filterQAttachment;
-    
-    Slider hpCutoffSlider;
-    std::unique_ptr<SliderAttachment> hpCutoffAttachment;
-    
-    Slider hpQSlider;
-    std::unique_ptr<SliderAttachment> hpQAttachment;
     
     Slider onePoleFcSlider;
     std::unique_ptr<SliderAttachment> onePoleFcAttachment;

@@ -33,18 +33,6 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
     addAndMakeVisible(&filterQSlider);
     filterQAttachment.reset (new SliderAttachment (valueTreeState, "filterQ", filterQSlider));
     
-    hpCutoffSlider.setSliderStyle(Slider::LinearBarVertical);
-    hpCutoffSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
-    hpCutoffSlider.setPopupDisplayEnabled(true, false, this);
-    addAndMakeVisible(&hpCutoffSlider);
-    hpCutoffAttachment.reset (new SliderAttachment (valueTreeState, "hpCutoff", hpCutoffSlider));
-    
-    hpQSlider.setSliderStyle(Slider::LinearBarVertical);
-    hpQSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
-    hpQSlider.setPopupDisplayEnabled(true, false, this);
-    addAndMakeVisible(&hpQSlider);
-    hpQAttachment.reset (new SliderAttachment (valueTreeState, "hpQ", hpQSlider));
-    
     onePoleFcSlider.setSliderStyle(Slider::LinearBarVertical);
     onePoleFcSlider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
     onePoleFcSlider.setPopupDisplayEnabled(true, false, this);
