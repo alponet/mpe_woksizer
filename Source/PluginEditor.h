@@ -33,23 +33,11 @@ private:
     Slider volumeSlider;
     std::unique_ptr<SliderAttachment> volumeAttachment;
     
-    Slider envAttackSlider;
-    std::unique_ptr<SliderAttachment> envAttackAttachment;
-    
-    Slider envReleaseSlider;
-    std::unique_ptr<SliderAttachment> envReleaseAttachment;
-    
     Slider filterQSlider;
     std::unique_ptr<SliderAttachment> filterQAttachment;
     
     Slider onePoleFcSlider;
     std::unique_ptr<SliderAttachment> onePoleFcAttachment;
-    
-    Slider osc1LevelSlider;
-    std::unique_ptr<SliderAttachment> osc1LevelAttachment;
-    
-    Slider osc2LevelSlider;
-    std::unique_ptr<SliderAttachment> osc2LevelAttachment;
     
     Slider osc2DetuneSlider;
     std::unique_ptr<SliderAttachment> osc2DetuneAttachment;
