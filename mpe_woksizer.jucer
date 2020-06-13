@@ -12,11 +12,6 @@
       <FILE id="wCRHyL" name="MPESynthVoice.cpp" compile="1" resource="0"
             file="Source/MPESynthVoice.cpp"/>
       <FILE id="UQ1fgx" name="MPESynthVoice.h" compile="0" resource="0" file="Source/MPESynthVoice.h"/>
-      <FILE id="mVzQgj" name="NoiseVoice.cpp" compile="1" resource="0" file="Source/NoiseVoice.cpp"/>
-      <FILE id="CE8NkK" name="NoiseVoice.h" compile="0" resource="0" file="Source/NoiseVoice.h"/>
-      <FILE id="QR7Z6O" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>
-      <FILE id="ETrul8" name="SynthVoice.h" compile="0" resource="0" file="Source/SynthVoice.h"/>
-      <FILE id="HIvPGM" name="SynthSound.h" compile="0" resource="0" file="Source/SynthSound.h"/>
       <FILE id="o5lCiR" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="m1oJrs" name="PluginProcessor.h" compile="0" resource="0"
