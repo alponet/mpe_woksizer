@@ -26,21 +26,9 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
         std::make_unique<AudioParameterFloat> ("oscNoiseLevel", "OscNoiseLevel", NormalisableRange<float> (0.0, 1.2, 0.01, 0.5), 0.1),
     })
 {
-    osc1.clearVoices();
-    osc2.clearVoices();
-    oscNoise.clearVoices();
     for (int i = 0; i < this->numVoices; i++) {
-        osc1.addVoice (new SynthVoice());
-        osc2.addVoice (new SynthVoice());
-        oscNoise.addVoice(new NoiseVoice());
+        synth.addVoice(new MPESynthVoice());
     }
-    
-    osc1.clearSounds();
-    osc2.clearSounds();
-    oscNoise.clearSounds();
-    osc1.addSound(new SynthSound());
-    osc2.addSound(new SynthSound());
-    oscNoise.addSound(new SynthSound());
     
     parameters.addParameterListener("filterQ", this);
     parameters.addParameterListener("onePoleFc", this);
@@ -127,26 +115,16 @@ void Mpe_woksizerAudioProcessor::changeProgramName (int index, const String& new
 void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     this->sampleRate = sampleRate;
+    synth.setCurrentPlaybackSampleRate (sampleRate);
     
-    ignoreUnused(samplesPerBlock);
-    osc1.setCurrentPlaybackSampleRate(sampleRate);
-    osc2.setCurrentPlaybackSampleRate(sampleRate);
-    oscNoise.setCurrentPlaybackSampleRate(sampleRate);
-    audioAnalyseBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
-    audioOutBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
-    osc1Buffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
-    osc2Buffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
-    noiseBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
-    
-    for (int i = 0; i < osc2.getNumVoices(); ++i) {
-        static_cast<SynthVoice*> (osc2.getVoice(i))->setDetune(*parameters.getRawParameterValue("osc2Detune"));
+    for (int i = 0; i < synth.getNumVoices(); ++i) {
+        MPESynthVoice* voice = static_cast<MPESynthVoice*>(synth.getVoice(i));
+        voice->setupFilters(getTotalNumOutputChannels(), sampleRate, samplesPerBlock);
     }
-
-    dsp::ProcessSpec spec;
-    spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.numChannels = getTotalNumOutputChannels();
     
+    audioOutBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
+    
+    /*
     float filterQ = *parameters.getRawParameterValue("filterQ");
     float onePoleFc = *parameters.getRawParameterValue("onePoleFc");
     for (int i = 0; i < filterCount; ++i)
@@ -167,6 +145,8 @@ void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
         envFollowFilter[i] = new OnePole(onePoleFc);
         filteredModulatorBuffer[i].setSize(getTotalNumInputChannels(), samplesPerBlock);
     }
+    */
+    
 }
 
 
@@ -205,72 +185,15 @@ bool Mpe_woksizerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
-
-    for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
     
-    float a = *parameters.getRawParameterValue("envAttack");
-    float d = 100.0;
-    float s = 0.8;
-    float r = *parameters.getRawParameterValue("envRelease");
-    for (int i = 0; i < this->numVoices; ++i) {
-        if ((osc1Voice = dynamic_cast<SynthVoice*>(osc1.getVoice(i))))
-            osc1Voice->setEnvelope(a, d, s, r);
-        if ((osc2Voice = dynamic_cast<SynthVoice*>(osc2.getVoice(i))))
-            osc2Voice->setEnvelope(a, d, s, r);
-        if ((noiseVoice = dynamic_cast<NoiseVoice*>(oscNoise.getVoice(i))))
-            noiseVoice->setEnvelope(a, d, s, r);
+    for (int i = 0; i < synth.getNumVoices(); ++i) {
+        MPESynthVoice* voice = static_cast<MPESynthVoice*>(synth.getVoice(i));
+        voice->setInputBuffer(buffer);
     }
-
-    dsp::AudioBlock<float> audioInputBlock(buffer);
-    for (int i = 0; i < filterCount; ++i)
-    {
-        filteredModulatorBuffer[i].clear();
-        dsp::AudioBlock<float> modulatorBlock(filteredModulatorBuffer[i]);
-        modulatorFilterBank[i].process(dsp::ProcessContextNonReplacing<float>(audioInputBlock, modulatorBlock));
-    }
-
+    
     audioOutBuffer.clear();
-    buffer.clear();
-    osc1Buffer.clear();
-    osc2Buffer.clear();
-    noiseBuffer.clear();
-    
-    osc1.renderNextBlock(osc1Buffer, midiMessages, 0, osc1Buffer.getNumSamples());    
-    osc2.renderNextBlock(osc2Buffer, midiMessages, 0, osc2Buffer.getNumSamples());
-    oscNoise.renderNextBlock(noiseBuffer, midiMessages, 0, noiseBuffer.getNumSamples());
-    osc1Buffer.applyGain(*parameters.getRawParameterValue("osc1Level"));
-    osc2Buffer.applyGain(*parameters.getRawParameterValue("osc2Level"));
-    noiseBuffer.applyGain(*parameters.getRawParameterValue("oscNoiseLevel"));
-    
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-    {
-        buffer.addFrom(channel, 0, osc1Buffer, channel, 0, osc1Buffer.getNumSamples());
-        buffer.addFrom(channel, 0, osc2Buffer, channel, 0, osc2Buffer.getNumSamples());
-        buffer.addFrom(channel, 0, noiseBuffer, channel, 0, noiseBuffer.getNumSamples());
-    }
-    
-    for (int i = 0; i < filterCount; ++i)
-    {
-        filteredCarrierBuffer[i].clear();
-        dsp::AudioBlock<float> filterBlock(filteredCarrierBuffer[i]);
-        filterBlock.copyFrom(audioInputBlock);
-        carrierFilterBank[i].process(dsp::ProcessContextReplacing<float> (filterBlock));
-        filteredCarrierBuffer[i].applyGain(*parameters.getRawParameterValue("filterQ"));
-        
-        for (int channel = 0; channel < filteredModulatorBuffer[i].getNumChannels(); ++channel)
-        {
-            auto* modulatorBuffer = filteredModulatorBuffer[i].getReadPointer(channel);
-            auto* carrierBuffer = filteredCarrierBuffer[i].getWritePointer(channel);
-            
-            for (auto sample = 0; sample < filteredCarrierBuffer[i].getNumSamples(); ++sample)
-            {
-                carrierBuffer[sample] *= envFollowFilter[i]->process(abs(modulatorBuffer[sample]));
-            }
-            
-            audioOutBuffer.addFrom(channel, 0, filteredCarrierBuffer[i], channel, 0, filteredCarrierBuffer[i].getNumSamples());
-        }
-    }
+    synth.renderNextBlock(audioOutBuffer, midiMessages, 0, buffer.getNumSamples());
+    midiMessages.clear();
     
     buffer = audioOutBuffer;
     buffer.applyGain(*parameters.getRawParameterValue("volume"));
@@ -281,24 +204,27 @@ void Mpe_woksizerAudioProcessor::parameterChanged (const String &parameterID, fl
 {    
     if (parameterID == "filterQ")
     {
-        for (int i = 0; i < modulatorFilterBank.size(); ++i)
-        {
-            *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *parameters.getRawParameterValue("filterQ"));
-            *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *parameters.getRawParameterValue("filterQ"));
-        }
+//        for (int i = 0; i < modulatorFilterBank.size(); ++i)
+//        {
+//            *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *parameters.getRawParameterValue("filterQ"));
+//            *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *parameters.getRawParameterValue("filterQ"));
+//        }
+        
     }
     else if (parameterID == "onePoleFc")
     {
-        for (int i = 0; i < envFollowFilter.size(); ++i)
-        {
-            envFollowFilter[i]->setFc(*parameters.getRawParameterValue("onePoleFc"));
-        }
+//        for (int i = 0; i < envFollowFilter.size(); ++i)
+//        {
+//            envFollowFilter[i]->setFc(*parameters.getRawParameterValue("onePoleFc"));
+//        }
+        
     }
     else if (parameterID == "osc2Detune")
     {
-        for (int i = 0; i < osc2.getNumVoices(); ++i) {
-            static_cast<SynthVoice*>(osc2.getVoice(i))->setDetune(*parameters.getRawParameterValue("osc2Detune"));
-        }
+//        for (int i = 0; i < osc2.getNumVoices(); ++i) {
+//            static_cast<SynthVoice*>(osc2.getVoice(i))->setDetune(*parameters.getRawParameterValue("osc2Detune"));
+//        }
+        
     }
 }
 
