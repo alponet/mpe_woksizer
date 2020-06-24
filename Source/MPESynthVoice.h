@@ -29,11 +29,6 @@ private:
     double phase      = 0.0;
     double phaseDelta = 0.0;
     double tailOff    = 0.0;
- 
-    // some useful constants
-    static constexpr auto maxLevel = 0.05;
-    static constexpr auto maxLevelDb = 31.0;
-    static constexpr auto smoothingLengthInSeconds = 0.01;
     
     maxiOsc osc1;
     maxiOsc osc2;
@@ -56,15 +51,17 @@ private:
     double sampleRate;
     dsp::ProcessSpec spec;
     float baseFilterQ;
-    float currentFilterQ;
     float baseOnePoleFc;
-    float currentOnePoleFc;
     float maxDetune;
-    float currentDetune;
     float baseNoiseMix;
-    float currentNoiseMix;
+    
+    SmoothedValue<double> currentFilterQ;
+    SmoothedValue<double> currentOnePoleFc;
+    SmoothedValue<double> currentDetune;
+    SmoothedValue<double> currentNoiseMix;
     
     void modulateFilters();
+    void modulateNoiseMix();
     void resetModulations();
     void modulateDetune();
 };

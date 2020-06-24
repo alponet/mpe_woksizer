@@ -19,7 +19,7 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
         std::make_unique<AudioParameterFloat> ("filterQ", "FilterQ", NormalisableRange<float> (0.1, 32.0, 0.01, 0.5), 14.0),
         std::make_unique<AudioParameterFloat> ("onePoleFc", "OnePoleFc", NormalisableRange<float> (0.000001, 0.001, 0.0000001, 0.5), 0.00005),
         std::make_unique<AudioParameterFloat> ("osc2Detune", "Osc2Detune", NormalisableRange<float> (-100.0, 100.0, 0.1, 1.0), 10.0),
-        std::make_unique<AudioParameterFloat> ("oscNoiseLevel", "OscNoiseLevel", NormalisableRange<float> (0.0, 1.2, 0.01, 0.5), 0.1),
+        std::make_unique<AudioParameterFloat> ("oscNoiseLevel", "OscNoiseLevel", NormalisableRange<float> (0.0, 1.2, 0.01, 1.0), 0.1),
     })
 {
     for (int i = 0; i < this->numVoices; i++) {
