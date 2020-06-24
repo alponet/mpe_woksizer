@@ -112,17 +112,18 @@ void MPESynthVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startS
         carrierFilterBank[i].process(dsp::ProcessContextReplacing<float> (filteredCarrierBlock));
         filteredCarrierBuffer[i].applyGain(filterQ);
         
+        // using only channel 0 here, because the envFollowFilter does not have multi-channel support yet
+        auto* modulator = filteredModulatorBuffer[i].getReadPointer(0);
+        auto* carrier = filteredCarrierBuffer[i].getWritePointer(0);
+        
+        for (auto sample = 0; sample < filteredCarrierBuffer[i].getNumSamples(); ++sample)
+        {
+            carrier[sample] *= envFollowFilter[i]->process(abs(modulator[sample]));
+        }
+        
         for (int channel = 0; channel < filteredModulatorBuffer[i].getNumChannels(); ++channel)
         {
-            auto* modulator = filteredModulatorBuffer[i].getReadPointer(channel);
-            auto* carrier = filteredCarrierBuffer[i].getWritePointer(channel);
-            
-            for (auto sample = 0; sample < filteredCarrierBuffer[i].getNumSamples(); ++sample)
-            {
-                carrier[sample] *= envFollowFilter[i]->process(abs(modulator[sample]));
-            }
-            
-            outputBuffer.addFrom(channel, 0, filteredCarrierBuffer[i], channel, 0, filteredCarrierBuffer[i].getNumSamples());
+            outputBuffer.addFrom(channel, 0, filteredCarrierBuffer[i], 0, 0, filteredCarrierBuffer[i].getNumSamples());
         }
     }
 }
@@ -147,7 +148,7 @@ void MPESynthVoice::prepare(int numChannels, double sampleRate, int samplesPerBl
     level.reset(100);
     currentNoiseMix.reset(100);
     
-    spec.sampleRate = currentSampleRate;
+    spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = numChannels;
     
@@ -197,7 +198,7 @@ void MPESynthVoice::setNoiseBaseMix(float noiseMix)
 
 void MPESynthVoice::modulateFilters()
 {
-    double fQmax = 18.0;
+    double fQmax = 8.0;
     double onePoleMax = 0.001;
     
     double timbreMod = timbre.getTargetValue();
