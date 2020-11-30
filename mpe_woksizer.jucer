@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="WHbls4" name="mpe_woksizer" projectType="audioplug" jucerVersion="5.4.7"
-              companyName="Thomas Alpers" companyWebsite="alpers.it" bundleIdentifier="it.alpers.mpe-woksizer"
+<JUCERPROJECT id="WHbls4" name="mpe_woksizer" projectType="audioplug" companyName="Thomas Alpers"
+              companyWebsite="alpers.it" bundleIdentifier="it.alpers.mpe-woksizer"
               pluginName="Woksizer" pluginDesc="MPE compatible vocal synthesizer"
               splashScreenColour="Light" version="0.5.0" pluginCharacteristicsValue="pluginWantsMidiIn"
               pluginVST3Category="Instrument,Synth" pluginFormats="buildAU,buildVST3"
-              pluginAUMainType="'aumu'">
+              pluginAUMainType="'aumu'" jucerFormatVersion="1">
   <MAINGROUP id="Yr5Jvt" name="mpe_woksizer">
     <GROUP id="{DD36E7B8-2D73-DACB-7C3A-19E7C509CB99}" name="Source">
       <FILE id="aDhR0F" name="OnePole.h" compile="0" resource="0" file="Source/OnePole.h"/>
