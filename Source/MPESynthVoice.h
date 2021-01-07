@@ -8,6 +8,7 @@
 class MPESynthVoice :  public MPESynthesiserVoice
 {
 public:
+    MPESynthVoice(AudioProcessorValueTreeState& parameters);
     void noteStarted() override;
     void noteStopped (bool allowTailOff) override;
     void notePressureChanged() override;
@@ -16,13 +17,13 @@ public:
     void noteKeyStateChanged() override {};
     void renderNextBlock(AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
     void setInputBuffer(AudioBuffer<float>& inputBuffer);
-    void prepare(int numChannels, double sampleRate, int samplesPerBlock, float filterQ, float onePoleFc, float noiseMix);
-    void setFilterBaseQs(float filterQ, float onePoleFc);
-    void setMaxDetune(float maxDetune);
-    void setNoiseBaseMix(float noiseMix);
+    void prepare(int numChannels, double sampleRate, int samplesPerBlock);
+    void updateParamRanges();
 private:
     AudioBuffer<float> inputBuffer;
     AudioBuffer<float> carrierBuffer;
+    
+    AudioProcessorValueTreeState* parameters = nullptr;
     
     SmoothedValue<double> level, timbre, frequency;
  
@@ -50,18 +51,26 @@ private:
     
     double sampleRate;
     dsp::ProcessSpec spec;
-    float baseFilterQ;
-    float baseOnePoleFc;
-    float maxDetune;
-    float baseNoiseMix;
+    
+    NormalisableRange<float> filterQRange;
+    NormalisableRange<float> envFollowerRange;
+    NormalisableRange<float> detuneRange;
+    NormalisableRange<float> noiseRange;
+    
+    bool isFilterQRangeInverted = false;
+    bool isEnvFollowerRangeInverted = false;
+    bool isDetuneRangeInverted = false;
+    bool isNoiseRangeInverted = false;
     
     SmoothedValue<double> currentFilterQ;
-    SmoothedValue<double> currentOnePoleFc;
+    SmoothedValue<double> currentEnvFollowerFc;
     SmoothedValue<double> currentDetune;
     SmoothedValue<double> currentNoiseMix;
     
-    void modulateFilters();
-    void modulateNoiseMix();
-    void resetModulations();
-    void modulateDetune();
+    void modulateParamByController(int controlID, float intensity);
+    
+    void modulateFilterQ(float intensity);
+    void modulateEnvFollower(float intensity);
+    void modulateDetune(float intensity);
+    void modulateNoise(float intensity);
 };

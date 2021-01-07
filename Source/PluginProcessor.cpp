@@ -1,7 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-
 Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
 #ifndef JucePlugin_PreferredChannelConfigurations
     AudioProcessor (BusesProperties()
@@ -13,23 +12,42 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
          #endif
            ),
 #endif
+    controllerParams({
+       "Pressure", "Timbre"
+    }),
     parameters (*this, nullptr, Identifier ("WoksizerParams"),
     {
-        std::make_unique<AudioParameterFloat> ("volume", "Volume", NormalisableRange<float> (0.0, 2.0, 0.01, 0.5), 1.0),
-        std::make_unique<AudioParameterFloat> ("filterQ", "FilterQ", NormalisableRange<float> (0.1, 8.0, 0.01, 0.5), 6.0),
-        std::make_unique<AudioParameterFloat> ("onePoleFc", "OnePoleFc", NormalisableRange<float> (0.000001, 0.001, 0.0000001, 0.5), 0.00005),
-        std::make_unique<AudioParameterFloat> ("osc2Detune", "Osc2Detune", NormalisableRange<float> (-100.0, 100.0, 0.1, 1.0), 10.0),
-        std::make_unique<AudioParameterFloat> ("oscNoiseLevel", "OscNoiseLevel", NormalisableRange<float> (0.0, 1.2, 0.01, 1.0), 0.1),
+        std::make_unique<AudioParameterFloat> ("volume", "Volume", NormalisableRange<float> (0.0, 2.0, 0.001, 0.5), 1.0),
+        std::make_unique<AudioParameterFloat> ("filterQMin", "Filter Q min", NormalisableRange<float> (0.1, 8.0, 0.01, 0.5), 4.0),
+        std::make_unique<AudioParameterFloat> ("filterQMax", "Filter Q max", NormalisableRange<float> (0.1, 8.0, 0.01, 0.5), 6.0),
+        std::make_unique<AudioParameterChoice> ("filterQControl", "Filter Q Controller", controllerParams, 0),
+        std::make_unique<AudioParameterFloat> ("envFollowerMin", "Envelope Follower min", NormalisableRange<float> (0.000001, 0.001, 0.0000001, 0.5), 0.00005),
+        std::make_unique<AudioParameterFloat> ("envFollowerMax", "Envelope Follower max", NormalisableRange<float> (0.000001, 0.001, 0.0000001, 0.5), 0.0001),
+        std::make_unique<AudioParameterChoice> ("envFollowerControl", "Envelope Follower Controller", controllerParams, 0),
+        std::make_unique<AudioParameterFloat> ("detuneMin", "osc2 Detune min", NormalisableRange<float> (-100.0, 100.0, 0.1, 1.0), 0.0),
+        std::make_unique<AudioParameterFloat> ("detuneMax", "osc2 Detune max", NormalisableRange<float> (-100.0, 100.0, 0.1, 1.0), 20.0),
+        std::make_unique<AudioParameterChoice> ("detuneControl", "Detune Controller", controllerParams, 0),
+        std::make_unique<AudioParameterFloat> ("noiseMin", "noise min", NormalisableRange<float> (0.0, 1.2, 0.01, 1.0), 0.0),
+        std::make_unique<AudioParameterFloat> ("noiseMax", "noise max", NormalisableRange<float> (0.0, 1.2, 0.01, 1.0), 0.2),
+        std::make_unique<AudioParameterChoice> ("noiseControl", "Noise Controller", controllerParams, 0),
     })
 {
     for (int i = 0; i < this->numVoices; i++) {
-        synth.addVoice(new MPESynthVoice());
+        synth.addVoice(new MPESynthVoice(parameters));
     }
     
-    parameters.addParameterListener("filterQ", this);
-    parameters.addParameterListener("onePoleFc", this);
-    parameters.addParameterListener("osc2Detune", this);
-    parameters.addParameterListener("oscNoiseLevel", this);
+    parameters.addParameterListener("filterQMin", this);
+    parameters.addParameterListener("filterQMax", this);
+    parameters.addParameterListener("filterQControl", this);
+    parameters.addParameterListener("envFollowerMin", this);
+    parameters.addParameterListener("envFollowerMax", this);
+    parameters.addParameterListener("envFollowerControl", this);
+    parameters.addParameterListener("detuneMin", this);
+    parameters.addParameterListener("detuneMax", this);
+    parameters.addParameterListener("detuneControl", this);
+    parameters.addParameterListener("noiseMin", this);
+    parameters.addParameterListener("noiseMax", this);
+    parameters.addParameterListener("noiseControl", this);
 }
 
 
@@ -116,7 +134,8 @@ void Mpe_woksizerAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     
     for (int i = 0; i < synth.getNumVoices(); ++i) {
         MPESynthVoice* voice = static_cast<MPESynthVoice*>(synth.getVoice(i));
-        voice->prepare(getTotalNumOutputChannels(), sampleRate, samplesPerBlock, *parameters.getRawParameterValue("filterQ"), *parameters.getRawParameterValue("onePoleFc"), *parameters.getRawParameterValue("oscNoiseLevel"));
+        
+        voice->prepare(getTotalNumOutputChannels(), sampleRate, samplesPerBlock);
     }
     
     audioOutBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
@@ -174,24 +193,10 @@ void Mpe_woksizerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
 
 
 void Mpe_woksizerAudioProcessor::parameterChanged (const String &parameterID, float newValue)
-{    
-    if (parameterID == "filterQ" || parameterID == "onePoleFc")
+{
+    for (int i = 0; i < synth.getNumVoices(); ++i)
     {
-        for (int i = 0; i < synth.getNumVoices(); ++i) {
-            static_cast<MPESynthVoice*>(synth.getVoice(i))->setFilterBaseQs(*parameters.getRawParameterValue("filterQ"), *parameters.getRawParameterValue("onePoleFc"));
-        }
-    }
-    else if (parameterID == "osc2Detune")
-    {        
-        for (int i = 0; i < synth.getNumVoices(); ++i) {
-            static_cast<MPESynthVoice*>(synth.getVoice(i))->setMaxDetune(*parameters.getRawParameterValue("osc2Detune"));
-        }
-    }
-    else if (parameterID == "oscNoiseLevel")
-    {
-        for (int i = 0; i < synth.getNumVoices(); ++i) {
-            static_cast<MPESynthVoice*>(synth.getVoice(i))->setNoiseBaseMix(*parameters.getRawParameterValue("oscNoiseLevel"));
-        }
+        static_cast<MPESynthVoice*>(synth.getVoice(i))->updateParamRanges();
     }
 }
 

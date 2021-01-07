@@ -1,14 +1,18 @@
 #include "MPESynthVoice.h"
 
 
+MPESynthVoice::MPESynthVoice(AudioProcessorValueTreeState& parameters) {
+    this->parameters = &parameters;
+}
+
+
 void MPESynthVoice::noteStarted()
 {
     jassert (currentlyPlayingNote.isValid());
     jassert (currentlyPlayingNote.keyState == MPENote::keyDown || currentlyPlayingNote.keyState == MPENote::keyDownAndSustained);
- 
-    level.setTargetValue (currentlyPlayingNote.pressure.asUnsignedFloat());
+
+    level.setTargetValue (currentlyPlayingNote.noteOnVelocity.asUnsignedFloat());
     frequency.setTargetValue (currentlyPlayingNote.getFrequencyInHertz());
-    timbre.setTargetValue (currentlyPlayingNote.timbre.asUnsignedFloat());
  
     phase = 0.0;
     auto cyclesPerSample = frequency.getTargetValue() / currentSampleRate;
@@ -35,8 +39,8 @@ void MPESynthVoice::noteStopped (bool allowTailOff)
 void MPESynthVoice::notePressureChanged()
 {
     float pressure = currentlyPlayingNote.pressure.asUnsignedFloat();
+    modulateParamByController(0, pressure);
     level.setTargetValue(pressure);
-    modulateDetune();
 }
 
 
@@ -49,9 +53,7 @@ void MPESynthVoice::notePitchbendChanged()
 void MPESynthVoice::noteTimbreChanged()
 {
     float timbreModVal = currentlyPlayingNote.timbre.asUnsignedFloat();
-    timbre.setTargetValue(timbreModVal);
-    modulateNoiseMix();
-    modulateFilters();
+    modulateParamByController(1, timbreModVal);
 }
 
 
@@ -70,12 +72,7 @@ void MPESynthVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startS
     {
         double f = frequency.getNextValue();
         double f2 = f + 1.0005777895 * currentDetune.getNextValue();
-        double tm = timbre.getNextValue();
         double lvl = level.getNextValue();
-        
-        tm = (tm - 0.5) * 1.25 + 0.5;
-        if (tm > 1) tm = 1;
-        if (tm < 0) tm = 0;
         
         double sawWaves = (osc1.saw(f) + osc2.saw(f2)) / 2;
         double noiseMix = currentNoiseMix.getNextValue();
@@ -89,7 +86,6 @@ void MPESynthVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startS
             if (tailOff <= 0.005)
             {
                 clearCurrentNote();
-                resetModulations();
                 phaseDelta = 0.0;
             }
         }
@@ -135,18 +131,12 @@ void MPESynthVoice::setInputBuffer(AudioBuffer<float> &inputBuffer)
 }
 
 
-void MPESynthVoice::prepare(int numChannels, double sampleRate, int samplesPerBlock, float filterQ, float onePoleFc, float noiseMix)
+void MPESynthVoice::prepare(int numChannels, double sampleRate, int samplesPerBlock)
 {
     this->sampleRate = sampleRate;
-    this->baseFilterQ = filterQ;
-    this->baseOnePoleFc = onePoleFc;
-    this->baseNoiseMix = noiseMix;
     
     inputBuffer.setSize(numChannels, samplesPerBlock);
     carrierBuffer.setSize(numChannels, samplesPerBlock);
-    
-    level.reset(100);
-    currentNoiseMix.reset(100);
     
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
@@ -158,94 +148,131 @@ void MPESynthVoice::prepare(int numChannels, double sampleRate, int samplesPerBl
         filteredCarrierBuffer[i].setSize(numChannels, samplesPerBlock);
         chosenFrequencies[i] = frequency;
         
-        envFollowFilter[i] = new OnePole(onePoleFc);
+        envFollowFilter[i] = new OnePole(*(parameters->getRawParameterValue("envFollowerMin")));
         filteredModulatorBuffer[i].setSize(numChannels, samplesPerBlock);
         
         modulatorFilterBank[i].reset();
-        *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], filterQ);
+        *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *(parameters->getRawParameterValue("filterQMin")));
         modulatorFilterBank[i].prepare(spec);
                 
         carrierFilterBank[i].reset();
-        *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], filterQ);
+        *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], *(parameters->getRawParameterValue("filterQMin")));
         carrierFilterBank[i].prepare(spec);
     }
+}
+
+
+void MPESynthVoice::updateParamRanges()
+{
+    float filterQMin = *parameters->getRawParameterValue("filterQMin");
+    float filterQMax = *parameters->getRawParameterValue("filterQMax");
+    float envFollowerMin = *parameters->getRawParameterValue("envFollowerMin");
+    float envFollowerMax = *parameters->getRawParameterValue("envFollowerMax");
+    float detuneMin = *parameters->getRawParameterValue("detuneMin");
+    float detuneMax = *parameters->getRawParameterValue("detuneMax");
+    float noiseMin = *parameters->getRawParameterValue("noiseMin");
+    float noiseMax = *parameters->getRawParameterValue("noiseMax");
+        
+    if (filterQMin != filterQMax) {
+        if (filterQMin < filterQMax) {
+            this->filterQRange = NormalisableRange<float> (filterQMin, filterQMax);
+        } else {
+            this->filterQRange = NormalisableRange<float> (filterQMax, filterQMin);
+            this->isFilterQRangeInverted = true;
+        }
+    }
     
-    resetModulations();
-}
-
-
-void MPESynthVoice::setFilterBaseQs(float filterQ, float onePoleFc)
-{
-    this->baseFilterQ = filterQ;
-    this->baseOnePoleFc = onePoleFc;
-    modulateFilters();
-}
-
-
-void MPESynthVoice::setMaxDetune(float maxDetune)
-{
-    this->maxDetune = maxDetune;
-    modulateDetune();
-}
-
-
-void MPESynthVoice::setNoiseBaseMix(float noiseMix)
-{
-    this->baseNoiseMix = noiseMix;
-    modulateNoiseMix();
-}
-
-
-void MPESynthVoice::modulateFilters()
-{
-    double fQmax = 8.0;
-    double onePoleMax = 0.001;
+    if (envFollowerMin != envFollowerMax) {
+        if (envFollowerMin < envFollowerMax) {
+            this->envFollowerRange = NormalisableRange<float> (envFollowerMin, envFollowerMax);
+        } else {
+            this->envFollowerRange = NormalisableRange<float> (envFollowerMax, envFollowerMin);
+            this->isEnvFollowerRangeInverted = true;
+        }
+    }
     
-    double timbreMod = timbre.getTargetValue();
-    double intensity = abs(timbreMod - 0.5) * 2;
-    double fQMod = (fQmax - baseFilterQ) * intensity;
-    currentFilterQ.setTargetValue(baseFilterQ + fQMod);
-    double opMod = (onePoleMax - baseOnePoleFc) * intensity;
-    currentOnePoleFc.setTargetValue(baseOnePoleFc + opMod);
+    if (detuneMin != detuneMax) {
+        if (detuneMin < detuneMax) {
+            this->detuneRange = NormalisableRange<float> (detuneMin, detuneMax);
+        } else {
+            this->detuneRange = NormalisableRange<float> (detuneMax, detuneMin);
+            this->isDetuneRangeInverted = true;
+        }
+    }
     
-    double filterQ = currentFilterQ.getTargetValue();
-    double onePoleFc = currentOnePoleFc.getTargetValue();
+    if (noiseMin != noiseMax) {
+        if (noiseMin < noiseMax) {
+            this->noiseRange = NormalisableRange<float> (noiseMin, noiseMax);
+        } else {
+            this->noiseRange = NormalisableRange<float> (noiseMax, noiseMin);
+            this->isNoiseRangeInverted = true;
+        }
+    }
+}
+
+
+void MPESynthVoice::modulateParamByController(int controlID, float intensity)
+{
+    int filterQControl =  *(parameters->getRawParameterValue("filterQControl"));
+    if (filterQControl == controlID)
+        modulateFilterQ(intensity);
+    
+    int envFollowerControl =  *(parameters->getRawParameterValue("envFollowerControl"));
+    if (envFollowerControl == controlID)
+        modulateEnvFollower(intensity);
+    
+    int detuneControl =  *(parameters->getRawParameterValue("detuneControl"));
+    if (detuneControl == controlID)
+        modulateDetune(intensity);
+    
+    int noiseControl = *(parameters->getRawParameterValue("noiseControl"));
+    if (noiseControl == controlID)
+        modulateNoise(intensity);
+}
+
+
+void MPESynthVoice::modulateFilterQ(float intensity)
+{    
+    if (isFilterQRangeInverted) intensity = 1 - intensity;
+    
+    float targetFilterQ = filterQRange.convertFrom0to1(intensity);
+    currentFilterQ.setTargetValue(targetFilterQ);
+    
     for (int i = 0; i < filterCount; ++i)
     {
-        *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], filterQ);
-        *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], filterQ);
-        envFollowFilter[i]->setFc(onePoleFc);
+        *modulatorFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], targetFilterQ);
+        *carrierFilterBank[i].state = *dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, chosenFrequencies[i], targetFilterQ);
     }
 }
 
 
-void MPESynthVoice::modulateNoiseMix()
+void MPESynthVoice::modulateEnvFollower(float intensity)
 {
-    double noiseMix;
-    double timbreMod = timbre.getTargetValue();
-    double intensity = abs(timbreMod - 0.5) * 2;
-    if (timbreMod > 0.5) {
-        noiseMix = baseNoiseMix - baseNoiseMix * intensity * 1.5;
-        if (noiseMix < 0) noiseMix = 0;
+    if (isEnvFollowerRangeInverted) intensity = 1 - intensity;
+    
+    float targetEnvFollow = envFollowerRange.convertFrom0to1(intensity);
+    currentEnvFollowerFc.setTargetValue(targetEnvFollow);
+    
+    for (int i = 0; i < filterCount; ++i)
+    {
+        envFollowFilter[i]->setFc(targetEnvFollow);
     }
-    else {
-        noiseMix = baseNoiseMix + (1 - baseNoiseMix) * intensity * 1.5;
-        if (noiseMix > 1) noiseMix = 1;
-    }
-    currentNoiseMix.setTargetValue(noiseMix);
 }
 
 
-void MPESynthVoice::resetModulations()
+void MPESynthVoice::modulateDetune(float intensity)
 {
-    currentNoiseMix.setCurrentAndTargetValue(baseNoiseMix);
-    currentFilterQ.setCurrentAndTargetValue(baseFilterQ);
-    currentOnePoleFc.setCurrentAndTargetValue(baseOnePoleFc);
-    modulateFilters();
+    if (isDetuneRangeInverted) intensity = 1 - intensity;
+    
+    float targetDetune = detuneRange.convertFrom0to1(intensity);
+    currentDetune.setTargetValue(targetDetune);
 }
 
 
-void MPESynthVoice::modulateDetune()
+void MPESynthVoice::modulateNoise(float intensity)
 {
-    currentDetune.setTargetValue(maxDetune * level.getTargetValue());
+    if (isNoiseRangeInverted) intensity = 1 - intensity;
+    
+    float targetNoiseMix = noiseRange.convertFrom0to1(intensity);
+    currentNoiseMix.setTargetValue(targetNoiseMix);
 }
