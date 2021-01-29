@@ -39,7 +39,7 @@ void MPESynthVoice::noteStopped (bool allowTailOff)
 void MPESynthVoice::notePressureChanged()
 {
     float pressure = currentlyPlayingNote.pressure.asUnsignedFloat();
-    modulateParamByController(0, pressure);
+    modulateParamByController(1, pressure);
     level.setTargetValue(pressure);
 }
 
@@ -53,7 +53,7 @@ void MPESynthVoice::notePitchbendChanged()
 void MPESynthVoice::noteTimbreChanged()
 {
     float timbreModVal = currentlyPlayingNote.timbre.asUnsignedFloat();
-    modulateParamByController(1, timbreModVal);
+    modulateParamByController(2, timbreModVal);
 }
 
 

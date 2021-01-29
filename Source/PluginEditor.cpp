@@ -9,18 +9,18 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
 {
     setSize (400, 220);
     
-    volumeSlider.setSliderStyle(Slider::Rotary);
+    volumeSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     volumeSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     volumeSlider.setPopupDisplayEnabled(true, false, this);
     addAndMakeVisible(&volumeSlider);
     volumeAttachment.reset (new SliderAttachment (valueTreeState, "volume", volumeSlider));
     
-    filterQMinSlider.setSliderStyle(Slider::Rotary);
+    filterQMinSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     filterQMinSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&filterQMinSlider);
     filterQMinAttachment.reset (new SliderAttachment (valueTreeState, "filterQMin", filterQMinSlider));
     
-    filterQMaxSlider.setSliderStyle(Slider::Rotary);
+    filterQMaxSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     filterQMaxSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&filterQMaxSlider);
     filterQMaxAttachment.reset (new SliderAttachment (valueTreeState, "filterQMax", filterQMaxSlider));
@@ -29,12 +29,12 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
     addAndMakeVisible(&filterQControlBox);
     filterQControlAttachment.reset (new ComboBoxAttachment(valueTreeState, "filterQControl", filterQControlBox));
     
-    envFollowerMinSlider.setSliderStyle(Slider::Rotary);
+    envFollowerMinSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     envFollowerMinSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&envFollowerMinSlider);
     envFollowerMinAttachment.reset (new SliderAttachment (valueTreeState, "envFollowerMin", envFollowerMinSlider));
     
-    envFollowerMaxSlider.setSliderStyle(Slider::Rotary);
+    envFollowerMaxSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     envFollowerMaxSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&envFollowerMaxSlider);
     envFollowerMaxAttachment.reset (new SliderAttachment (valueTreeState, "envFollowerMax", envFollowerMaxSlider));
@@ -43,12 +43,12 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
     addAndMakeVisible(&envFollowerControlBox);
     envFollowerControlAttachment.reset (new ComboBoxAttachment(valueTreeState, "envFollowerControl", envFollowerControlBox));
     
-    detuneMinSlider.setSliderStyle(Slider::Rotary);
+    detuneMinSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     detuneMinSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&detuneMinSlider);
     detuneMinAttachment.reset (new SliderAttachment (valueTreeState, "detuneMin", detuneMinSlider));
     
-    detuneMaxSlider.setSliderStyle(Slider::Rotary);
+    detuneMaxSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     detuneMaxSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&detuneMaxSlider);
     detuneMaxAttachment.reset (new SliderAttachment (valueTreeState, "detuneMax", detuneMaxSlider));
@@ -57,12 +57,12 @@ Mpe_woksizerAudioProcessorEditor::Mpe_woksizerAudioProcessorEditor (Mpe_woksizer
     addAndMakeVisible(&detuneControlBox);
     detuneControlAttachment.reset (new ComboBoxAttachment(valueTreeState, "detuneControl", detuneControlBox));
     
-    noiseMinSlider.setSliderStyle(Slider::Rotary);
+    noiseMinSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     noiseMinSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&noiseMinSlider);
     noiseMinAttachment.reset (new SliderAttachment (valueTreeState, "noiseMin", noiseMinSlider));
     
-    noiseMaxSlider.setSliderStyle(Slider::Rotary);
+    noiseMaxSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     noiseMaxSlider.setTextBoxStyle(Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(&noiseMaxSlider);
     noiseMaxAttachment.reset (new SliderAttachment (valueTreeState, "noiseMax", noiseMaxSlider));

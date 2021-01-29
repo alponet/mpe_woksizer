@@ -13,7 +13,7 @@ Mpe_woksizerAudioProcessor::Mpe_woksizerAudioProcessor()  :
            ),
 #endif
     controllerParams({
-       "Pressure", "Timbre"
+       "", "Pressure", "Timbre"
     }),
     parameters (*this, nullptr, Identifier ("WoksizerParams"),
     {
