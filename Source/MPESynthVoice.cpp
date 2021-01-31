@@ -208,6 +208,8 @@ void MPESynthVoice::updateParamRanges()
             this->isNoiseRangeInverted = true;
         }
     }
+    
+    modulateParamByController(0, 0); // reset modulations for unassigned parameters
 }
 
 
